@@ -18,5 +18,7 @@ Blender2.8 以降で動作する想定。
 Blender2.91.0 で動作確認済み。
  
 # Installation
-- camera_adjustment_tool.py をダウンロード
-- Blenderのプリファレンス → アドオン → インストール からCameraAdjustmentTool.py をインストール後、有効化する。
+
+1. zipをダウンロードして解凍
+![download](https://user-images.githubusercontent.com/42290408/106333848-d87f3d80-62cc-11eb-845c-cea4d2b50ee4.jpg)
+1. Blenderのプリファレンス → アドオン → インストール からCameraAdjustmentTool.py をインストール後、有効化する。
