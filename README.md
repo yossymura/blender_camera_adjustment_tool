@@ -2,6 +2,8 @@
 
 Blenderで簡易的なカメラ操作するためのアドオン。  
 3Dビュー上でマウス操作により角度や向きなどを簡単に調整できる。
+
+![camera_adjustment](https://user-images.githubusercontent.com/42290408/106333421-f4361400-62cb-11eb-9507-a1e95275a5cd.jpg)
  
 # Features
  
