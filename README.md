@@ -21,4 +21,4 @@ Blender2.91.0 で動作確認済み。
 
 1. zipをダウンロードして解凍
 ![download](https://user-images.githubusercontent.com/42290408/106333848-d87f3d80-62cc-11eb-845c-cea4d2b50ee4.jpg)
-1. Blenderのプリファレンス → アドオン → インストール からCameraAdjustmentTool.py をインストール後、有効化する。
+1. Blenderのプリファレンス → アドオン → インストール からcamera_adjustment_tool.py をインストール後、有効化する。
