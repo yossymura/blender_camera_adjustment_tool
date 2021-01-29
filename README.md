@@ -1,6 +1,6 @@
 # blender_camera_adjustment_tool
 
-Blenderで簡易的なカメラ操作するためのアドオン。
+Blenderで簡易的なカメラ操作するためのアドオン。  
 3Dビュー上でマウス操作により角度や向きなどを簡単に調整できる。
  
 # Features
@@ -12,10 +12,9 @@ Blenderで簡易的なカメラ操作するためのアドオン。
  
 # Requirement
 
-Blender2.8 以降で動作する想定。
+Blender2.8 以降で動作する想定。  
 Blender2.91.0 で動作確認済み。
  
 # Installation
- 
-プリファレンス → アドオン → インストール から
-CameraAdjustmentTool.py をインストール後、有効化する。
+- camera_adjustment_tool.py をダウンロード
+- Blenderのプリファレンス → アドオン → インストール からCameraAdjustmentTool.py をインストール後、有効化する。
