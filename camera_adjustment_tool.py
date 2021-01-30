@@ -39,6 +39,7 @@ class CAT_PT_Panel(Panel):
     bl_region_type = 'UI'
     bl_category = 'カメラ'
     bl_label = "カメラ調整"
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
         layout = self.layout
@@ -85,7 +86,7 @@ class CAT_PT_Panel(Panel):
 
             box = layout.box()
             row = box.row(align = False)
-            row.label(text="カメラビュー切替")
+            row.label(text="カメラビュー")
             row.operator(
                 "cameras.off_camera_view" if context.area.spaces[0].region_3d.view_perspective == 'CAMERA' else "cameras.on_camera_view",
                 text="ON / OFF",
@@ -111,6 +112,64 @@ class CAT_PT_Panel(Panel):
 
                     row = box.row(align=False)
                     row.operator("cameras.zoom_manual", text="ズーム")
+                else:
+                    row = layout.row(align=False)
+                    row.alignment = "CENTER"
+                    row.alert = True
+                    row.label(text="調整するカメラを選択してください", icon= "ERROR")
+
+            row = layout.row(align = True)
+            row.alignment = "LEFT"
+            row.prop(wm, "ui_interval", icon="TRIA_DOWN" if wm.ui_interval else "TRIA_RIGHT", emboss=False)
+
+            if wm.ui_interval:
+                objects = context.selected_objects
+                if len(objects) == 1 and objects[0].type == 'CAMERA':
+                    
+                    layout.label(text="角度")
+                    box = layout.box()
+                    row = box.row(align=False)
+                    row.label(text="変更角度:")
+                    row.prop(props,"change_angle",text="")
+                    
+                    row = box.row(align=False)
+                    op_up = row.operator("cameras.set_angle", text="↑").direction = "up"
+                    
+                    row = box.row(align=False)
+                    op_left = row.operator("cameras.set_angle", text="←").direction = "left"
+                    op_right = row.operator("cameras.set_angle", text="→").direction = "right"
+
+                    row = box.row(align=True)
+                    op_down = row.operator("cameras.set_angle", text="↓").direction = "down"
+
+                    box = layout.box()
+                    row = box.row(align=False)
+                    row.operator("cameras.set_horizen", text="水平に")
+
+                    layout.label(text="位置")
+                    box = layout.box()
+                    row = box.row(align=False)
+                    row.label(text="移動距離(m):")
+                    row.prop(props,"move_distance",text="")
+
+                    row = box.row(align=False)
+                    row.operator("cameras.move", text="↑").direction = 'up'
+                    row = box.row(align=False)
+                    row.operator("cameras.move", text="←").direction = 'left'
+                    row.operator("cameras.move", text="→").direction = 'right'
+                    row = box.row(align=False)
+                    row.operator("cameras.move", text="↓").direction = 'down'
+
+                    layout.label(text="ズーム")
+                    box = layout.box()
+                    row = box.row(align=False)
+                    row.label(text="移動距離(m):")
+                    row.prop(props,"zoom_distance",text="")
+
+                    row = box.row(align=False)
+                    row.operator("cameras.zoom", text="ズームイン").in_out = 'in'
+                    row.operator("cameras.zoom", text="ズームアウト").in_out = 'out'
+
                 else:
                     row = layout.row(align=False)
                     row.alignment = "CENTER"
@@ -160,40 +219,11 @@ class CAT_PT_Panel(Panel):
                     row.alert = True
                     row.label(text="調整するカメラを選択してください", icon= "ERROR")
 
-            row = layout.row(align = True)
-            row.alignment = "LEFT"
-            row.prop(wm, "ui_others", icon="TRIA_DOWN" if wm.ui_others else "TRIA_RIGHT", emboss=False)
-
-            if wm.ui_others:
-                objects = context.selected_objects
-                if len(objects) == 1 and objects[0].type == 'CAMERA':
-                    
-                    layout.label(text="一定間隔でズーム")
-                    box = layout.box()
-                    row = box.row(align=False)
-                    row.label(text="移動距離(m):")
-                    row.prop(props,"move_distance",text="")
-
-                    row = box.row(align=False)
-                    row.operator("cameras.zoom", text="ズームイン").in_out = 'in'
-                    row.operator("cameras.zoom", text="ズームアウト").in_out = 'out'
-
-                    layout.label(text="角度")
-                    box = layout.box()
-                    row = box.row(align=False)
-                    row.operator("cameras.set_horizen", text="水平に")
-
-                else:
-                    row = layout.row(align=False)
-                    row.alignment = "CENTER"
-                    row.alert = True
-                    row.label(text="調整するカメラを選択してください", icon= "ERROR")
-
 
 class CAT_WindowManager(PropertyGroup):
+    ui_direct : BoolProperty(name="手動調整")
+    ui_interval : BoolProperty(name="一定間隔で調整")
     ui_to_target : BoolProperty(name="ターゲットへ向ける")
-    ui_direct : BoolProperty(name="直接調整")
-    ui_others : BoolProperty(name="その他")
 
 
 class CAT_Props(PropertyGroup):
@@ -203,7 +233,7 @@ class CAT_Props(PropertyGroup):
     angle_direction : bpy.props.EnumProperty(default="front",name="Enum", items=[("front", "前から", "ターゲットの前から映す", "", 0),("back", "後ろから", "ターゲットの後ろから映す","", 1)])
     disp_collection : bpy.props.EnumProperty(default="off",name="Enum", items=[("on", "表示", "コレクション名を表示", "", 1),("off", "非表示", "コレクション名を非表示","", 0)])
     move_distance  : bpy.props.FloatProperty(default=1.00, name="Float",min=0)
-
+    zoom_distance  : bpy.props.FloatProperty(default=1.00, name="Float",min=0)
 
 class Set_Camera_To_Target(bpy.types.Operator):
     bl_idname = 'cameras.to_target'
@@ -334,15 +364,79 @@ class Zoom_Camera(bpy.types.Operator):
 
     def execute(self,context):
         camera = context.selected_objects[0]
-        move_distance = context.scene.props.move_distance
+        zoom_distance = context.scene.props.zoom_distance
 
         if 'in' == self.in_out:
-            bpy.ops.transform.translate(value=(0, 0, -move_distance), orient_type='LOCAL')
-        else:
-            bpy.ops.transform.translate(value=(0, 0, move_distance), orient_type='LOCAL')
+            bpy.ops.transform.translate(value=(0, 0, -zoom_distance), orient_type='LOCAL')
+        elif 'out' == self.in_out:
+            bpy.ops.transform.translate(value=(0, 0, zoom_distance), orient_type='LOCAL')
 
         return{'FINISHED'}
 
+class Move_Camera(bpy.types.Operator):
+    bl_idname = 'cameras.move'
+    bl_label = 'Zoom in/out'
+    bl_description = "Zoom in/out"
+    bl_options = {'UNDO'}
+    direction: bpy.props.StringProperty(default="")
+
+    def execute(self,context):
+        camera = context.selected_objects[0]
+        move_distance = context.scene.props.move_distance
+
+        up_down, left_right, = 0, 0
+        
+        if 'up' == self.direction:
+            up_down = 1
+        if 'down' == self.direction:
+            up_down = -1
+        if 'left' == self.direction:
+            left_right = -1
+        if 'right' == self.direction:
+            left_right = 1
+
+        x = move_distance * left_right
+        y = move_distance * up_down
+        bpy.ops.transform.translate(value=(x, y, 0), orient_type='LOCAL')
+
+        return{'FINISHED'}
+
+class Set_Camera_Angle(bpy.types.Operator):
+    bl_idname = 'cameras.set_angle'
+    bl_label = 'Set Angle'
+    bl_description = "set angle"
+    bl_options = {'UNDO'}
+    direction: bpy.props.StringProperty(default="")
+
+    def execute(self,context):
+        
+        change_angle = context.scene.props.change_angle
+        camera = context.selected_objects[0]
+        up_down, left_right = 0, 0
+        if 'up' == self.direction:
+            up_down = 1
+        elif 'down' == self.direction:
+            up_down = -1
+        if 'left' == self.direction:
+            left_right = 1
+        elif 'right' == self.direction:
+            left_right = -1
+        
+        add_angle_x = math.radians(change_angle) * up_down
+        add_angle_z = math.radians(change_angle) * left_right
+        
+        x = camera.rotation_euler.x + add_angle_x
+        y = camera.rotation_euler.y
+        z = camera.rotation_euler.z + add_angle_z
+        
+        # global transform
+        camera.rotation_euler = (x, y, z)
+
+        # if local transform
+        # bpy.ops.transform.rotate(value=add_angle_x, orient_axis='X', orient_type='LOCAL')
+        # bpy.ops.transform.rotate(value=add_angle_z, orient_axis='Y', orient_type='LOCAL')
+
+        return{'FINISHED'}
 
 class Zoom_Camera_Manual(bpy.types.Operator):
     bl_idname = 'cameras.zoom_manual'
@@ -395,6 +489,8 @@ Zoom_Camera,
 Zoom_Camera_Manual,
 Translate_Camera_Manual,
 Rotate_Camera_Manual,
+Move_Camera,
+Set_Camera_Angle,
 )
 
 
