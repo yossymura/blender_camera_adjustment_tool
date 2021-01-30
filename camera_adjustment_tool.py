@@ -39,7 +39,7 @@ class CAT_PT_Panel(Panel):
     bl_region_type = 'UI'
     bl_category = 'カメラ'
     bl_label = "カメラ調整"
-    bl_options = {'DEFAULT_CLOSED'}
+    # bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
         layout = self.layout
@@ -96,8 +96,7 @@ class CAT_PT_Panel(Panel):
             row.alignment = "LEFT"
             row.prop(wm, "ui_direct", icon="TRIA_DOWN" if wm.ui_direct else "TRIA_RIGHT", emboss=False)
             if wm.ui_direct:
-                objects = context.selected_objects
-                if len(objects) == 1 and objects[0].type == 'CAMERA':
+                if context.view_layer.objects.active.type == 'CAMERA':
                     box = layout.box()
                     row = box.row(align=False)
                     if context.area.spaces[0].region_3d.view_perspective == 'CAMERA':
@@ -116,7 +115,7 @@ class CAT_PT_Panel(Panel):
                     row = layout.row(align=False)
                     row.alignment = "CENTER"
                     row.alert = True
-                    row.label(text="調整するカメラを選択してください", icon= "ERROR")
+                    row.label(text="調整するカメラをアクティブにしてください", icon= "ERROR")
 
             row = layout.row(align = True)
             row.alignment = "LEFT"
@@ -124,7 +123,7 @@ class CAT_PT_Panel(Panel):
 
             if wm.ui_interval:
                 objects = context.selected_objects
-                if len(objects) == 1 and objects[0].type == 'CAMERA':
+                if context.view_layer.objects.active.type == 'CAMERA':
                     
                     layout.label(text="角度")
                     box = layout.box()
@@ -174,7 +173,7 @@ class CAT_PT_Panel(Panel):
                     row = layout.row(align=False)
                     row.alignment = "CENTER"
                     row.alert = True
-                    row.label(text="調整するカメラを選択してください", icon= "ERROR")
+                    row.label(text="調整するカメラをアクティブにしてください", icon= "ERROR")
 
             row = layout.row(align = True)
             row.alignment = "LEFT"
@@ -182,7 +181,7 @@ class CAT_PT_Panel(Panel):
 
             if wm.ui_to_target:
                 objects = context.selected_objects
-                if len(objects) == 1 and objects[0].type == 'CAMERA':
+                if context.view_layer.objects.active.type == 'CAMERA':
 
                     box = layout.box()
                     row = box.row(align=False)
@@ -217,7 +216,7 @@ class CAT_PT_Panel(Panel):
                     row = layout.row(align=False)
                     row.alignment = "CENTER"
                     row.alert = True
-                    row.label(text="調整するカメラを選択してください", icon= "ERROR")
+                    row.label(text="調整するカメラをアクティブにしてください", icon= "ERROR")
 
 
 class CAT_WindowManager(PropertyGroup):
@@ -235,6 +234,31 @@ class CAT_Props(PropertyGroup):
     move_distance  : bpy.props.FloatProperty(default=1.00, name="Float",min=0)
     zoom_distance  : bpy.props.FloatProperty(default=1.00, name="Float",min=0)
 
+
+class Select_Camera(bpy.types.Operator):
+    bl_idname = 'cameras.select_object'
+    bl_label = 'Select Camera'
+    bl_description = "Select camera"
+    bl_options = {'UNDO'}
+
+    camera: bpy.props.StringProperty()
+
+    def execute(self,context):
+        if context.object:
+            if context.object.select_get():
+                context.object.select_set(state=False)
+        cam = bpy.data.objects[self.camera]
+        cam.select_set(state=True)
+        context.view_layer.objects.active = cam
+        context.scene.camera = cam
+        
+        return{'FINISHED'}
+
+def select_off_not_camera(context):
+    for selected_object in context.selected_objects:
+        if selected_object != context.view_layer.objects.active and selected_object.select_get():
+            selected_object.select_set(state=False)
+
 class Set_Camera_To_Target(bpy.types.Operator):
     bl_idname = 'cameras.to_target'
     bl_label = 'Set Camera To Target'
@@ -244,15 +268,16 @@ class Set_Camera_To_Target(bpy.types.Operator):
 
     def execute(self,context):
         if context.scene.props.target_Pointer is not None:
-            camera = context.selected_objects[0]
-            
+            select_off_not_camera(context)
+            camera = context.view_layer.objects.active
+
             target = context.scene.props.target_Pointer
-            camera.location = target.location
-            camera.rotation_euler = target.rotation_euler
-            
             angle_direction = context.scene.props.angle_direction
             angle_distance = context.scene.props.angle_distance
 
+            camera.location = target.location
+            camera.rotation_euler = target.rotation_euler
+            
             front_back, up_down, left_right, side = 1, 0, 0, 1
             
             if 'front' == angle_direction:
@@ -293,30 +318,12 @@ class Set_Camera_Level(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self,context):
-        camera = context.selected_objects[0]
+        select_off_not_camera(context)
+        camera = context.view_layer.objects.active
+
         z = camera.rotation_euler.z
         camera.rotation_euler = (math.radians(90), 0, z)
 
-        return{'FINISHED'}
-
-
-class Select_Camera(bpy.types.Operator):
-    bl_idname = 'cameras.select_object'
-    bl_label = 'Select Camera'
-    bl_description = "Select camera"
-    bl_options = {'UNDO'}
-
-    camera: bpy.props.StringProperty()
-
-    def execute(self,context):
-        if context.object:
-            if context.object.select_get():
-                context.object.select_set(state=False)
-        cam = bpy.data.objects[self.camera]
-        cam.select_set(state=True)
-        context.view_layer.objects.active = cam
-        context.scene.camera = cam
-        
         return{'FINISHED'}
 
 
@@ -350,6 +357,7 @@ class Fly_Mode(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self,context):
+        select_off_not_camera(context)
         bpy.ops.view3d.navigate('INVOKE_DEFAULT')
 
         return{'FINISHED'}
@@ -363,8 +371,10 @@ class Zoom_Camera(bpy.types.Operator):
     in_out: bpy.props.StringProperty(default="")
 
     def execute(self,context):
-        camera = context.selected_objects[0]
         zoom_distance = context.scene.props.zoom_distance
+
+        select_off_not_camera(context)
+        camera = context.view_layer.objects.active
 
         if 'in' == self.in_out:
             bpy.ops.transform.translate(value=(0, 0, -zoom_distance), orient_type='LOCAL')
@@ -381,8 +391,10 @@ class Move_Camera(bpy.types.Operator):
     direction: bpy.props.StringProperty(default="")
 
     def execute(self,context):
-        camera = context.selected_objects[0]
         move_distance = context.scene.props.move_distance
+
+        select_off_not_camera(context)
+        camera = context.view_layer.objects.active
 
         up_down, left_right, = 0, 0
         
@@ -409,9 +421,11 @@ class Set_Camera_Angle(bpy.types.Operator):
     direction: bpy.props.StringProperty(default="")
 
     def execute(self,context):
-        
         change_angle = context.scene.props.change_angle
-        camera = context.selected_objects[0]
+
+        select_off_not_camera(context)
+        camera = context.view_layer.objects.active
+        
         up_down, left_right = 0, 0
         if 'up' == self.direction:
             up_down = 1
@@ -429,12 +443,7 @@ class Set_Camera_Angle(bpy.types.Operator):
         y = camera.rotation_euler.y
         z = camera.rotation_euler.z + add_angle_z
         
-        # global transform
         camera.rotation_euler = (x, y, z)
-
-        # if local transform
-        # bpy.ops.transform.rotate(value=add_angle_x, orient_axis='X', orient_type='LOCAL')
-        # bpy.ops.transform.rotate(value=add_angle_z, orient_axis='Y', orient_type='LOCAL')
 
         return{'FINISHED'}
 
@@ -445,6 +454,7 @@ class Zoom_Camera_Manual(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self,context):
+        select_off_not_camera(context)
         bpy.ops.transform.translate('INVOKE_DEFAULT', constraint_axis=(False, False, True), orient_type='LOCAL')
 
         return{'FINISHED'}
@@ -457,6 +467,7 @@ class Translate_Camera_Manual(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self,context):
+        select_off_not_camera(context)
         bpy.ops.transform.translate('INVOKE_DEFAULT')
 
         return{'FINISHED'}
@@ -469,6 +480,7 @@ class Rotate_Camera_Manual(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self,context):
+        select_off_not_camera(context)
         bpy.ops.transform.rotate('INVOKE_DEFAULT')
 
         return{'FINISHED'}
