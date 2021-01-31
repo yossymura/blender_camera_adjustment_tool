@@ -96,7 +96,7 @@ class CAT_PT_Panel(Panel):
             row.alignment = "LEFT"
             row.prop(wm, "ui_direct", icon="TRIA_DOWN" if wm.ui_direct else "TRIA_RIGHT", emboss=False)
             if wm.ui_direct:
-                if context.view_layer.objects.active.type == 'CAMERA':
+                if context.view_layer.objects.active is not None and context.view_layer.objects.active.type == 'CAMERA':
                     box = layout.box()
                     row = box.row(align=False)
                     if context.area.spaces[0].region_3d.view_perspective == 'CAMERA':
@@ -115,15 +115,14 @@ class CAT_PT_Panel(Panel):
                     row = layout.row(align=False)
                     row.alignment = "CENTER"
                     row.alert = True
-                    row.label(text="調整するカメラをアクティブにしてください", icon= "ERROR")
+                    row.label(text="調整するカメラを選択してください", icon= "ERROR")
 
             row = layout.row(align = True)
             row.alignment = "LEFT"
             row.prop(wm, "ui_interval", icon="TRIA_DOWN" if wm.ui_interval else "TRIA_RIGHT", emboss=False)
 
             if wm.ui_interval:
-                objects = context.selected_objects
-                if context.view_layer.objects.active.type == 'CAMERA':
+                if context.view_layer.objects.active is not None and context.view_layer.objects.active.type == 'CAMERA':
                     
                     layout.label(text="角度")
                     box = layout.box()
@@ -173,50 +172,55 @@ class CAT_PT_Panel(Panel):
                     row = layout.row(align=False)
                     row.alignment = "CENTER"
                     row.alert = True
-                    row.label(text="調整するカメラをアクティブにしてください", icon= "ERROR")
+                    row.label(text="調整するカメラを選択してください", icon= "ERROR")
 
             row = layout.row(align = True)
             row.alignment = "LEFT"
             row.prop(wm, "ui_to_target", icon="TRIA_DOWN" if wm.ui_to_target else "TRIA_RIGHT", emboss=False)
 
             if wm.ui_to_target:
-                objects = context.selected_objects
-                if context.view_layer.objects.active.type == 'CAMERA':
+                if context.view_layer.objects.active is not None and context.view_layer.objects.active.type == 'CAMERA':
 
                     box = layout.box()
                     row = box.row(align=False)
                     row.prop(props,"target_Pointer",text="ターゲット")
-                    row = box.row(align=False)
-                    row.label(text="距離(m):")
-                    row.prop(props,"angle_distance",text="")
-                    row = box.row(align=False)
-                    row.label(text="向き")
-                    row.prop(props, 'angle_direction', expand=True)
-                    
-                    row = box.row(align=False)
-                    angle_left_up = row.operator("cameras.to_target", text="↘").direction = "left_up"
-                    angle_up = row.operator("cameras.to_target", text="↓").direction = "up"
-                    angle_right_up = row.operator("cameras.to_target", text="↙").direction = "right_up"
 
-                    row = box.row(align=False)
-                    angle_left = row.operator("cameras.to_target", text="→").direction = "left"
-                    angle_center = row.operator("cameras.to_target", text="正面").direction = "center"
-                    angle_right = row.operator("cameras.to_target", text="←").direction = "right"
+                    if context.scene.props.target_Pointer is not None:
+                        row = box.row(align=False)
+                        row.label(text="距離(m):")
+                        row.prop(props,"angle_distance",text="")
+                        row = box.row(align=False)
+                        row.label(text="向き")
+                        row.prop(props, 'angle_direction', expand=True)
+                        
+                        row = box.row(align=False)
+                        angle_left_up = row.operator("cameras.to_target", text="↘").direction = "left_up"
+                        angle_up = row.operator("cameras.to_target", text="↓").direction = "up"
+                        angle_right_up = row.operator("cameras.to_target", text="↙").direction = "right_up"
 
-                    row = box.row(align=False)
-                    angle_left_down = row.operator("cameras.to_target", text="↗").direction = "left_down"
-                    angle_down = row.operator("cameras.to_target", text="↑").direction = "down"
-                    angle_right_down = row.operator("cameras.to_target", text="↖").direction = "right_down"
+                        row = box.row(align=False)
+                        angle_left = row.operator("cameras.to_target", text="→").direction = "left"
+                        angle_center = row.operator("cameras.to_target", text="正面").direction = "center"
+                        angle_right = row.operator("cameras.to_target", text="←").direction = "right"
 
-                    row = box.row(align=False)
-                    angle_side_left = row.operator("cameras.to_target", text="→→").direction = "side_left"
-                    angle_side_right = row.operator("cameras.to_target", text="←←").direction = "side_right"
+                        row = box.row(align=False)
+                        angle_left_down = row.operator("cameras.to_target", text="↗").direction = "left_down"
+                        angle_down = row.operator("cameras.to_target", text="↑").direction = "down"
+                        angle_right_down = row.operator("cameras.to_target", text="↖").direction = "right_down"
 
+                        row = box.row(align=False)
+                        angle_side_left = row.operator("cameras.to_target", text="→→").direction = "side_left"
+                        angle_side_right = row.operator("cameras.to_target", text="←←").direction = "side_right"
+                    else:
+                        row = layout.row(align=False)
+                        row.alignment = "CENTER"
+                        row.alert = True
+                        row.label(text="ターゲットを選択してください", icon= "ERROR")
                 else:
                     row = layout.row(align=False)
                     row.alignment = "CENTER"
                     row.alert = True
-                    row.label(text="調整するカメラをアクティブにしてください", icon= "ERROR")
+                    row.label(text="調整するカメラを選択してください", icon= "ERROR")
 
 
 class CAT_WindowManager(PropertyGroup):
@@ -246,18 +250,19 @@ class Select_Camera(bpy.types.Operator):
     def execute(self,context):
         if context.object:
             if context.object.select_get():
-                context.object.select_set(state=False)
+                context.object.select_set(False)
         cam = bpy.data.objects[self.camera]
-        cam.select_set(state=True)
+        cam.select_set(True)
         context.view_layer.objects.active = cam
         context.scene.camera = cam
         
         return{'FINISHED'}
 
-def select_off_not_camera(context):
+def select_only_camera(context):
     for selected_object in context.selected_objects:
         if selected_object != context.view_layer.objects.active and selected_object.select_get():
-            selected_object.select_set(state=False)
+            selected_object.select_set(False)
+    context.view_layer.objects.active.select_set(True)
 
 class Set_Camera_To_Target(bpy.types.Operator):
     bl_idname = 'cameras.to_target'
@@ -268,7 +273,7 @@ class Set_Camera_To_Target(bpy.types.Operator):
 
     def execute(self,context):
         if context.scene.props.target_Pointer is not None:
-            select_off_not_camera(context)
+            select_only_camera(context)
             camera = context.view_layer.objects.active
 
             target = context.scene.props.target_Pointer
@@ -300,13 +305,20 @@ class Set_Camera_To_Target(bpy.types.Operator):
             y = (front_back * -1) * angle_distance * side
             z = up_down * angle_distance
             bpy.ops.transform.translate(value=(x, y, z), orient_type='LOCAL')
+            
+            after_x, after_y, after_z = camera.location
+
+            for obj in context.view_layer.objects:
+                if obj != camera and obj != target:
+                    obj.select_set(False)
 
             target.select_set(True)
-            bpy.context.view_layer.objects.active = target
-            bpy.ops.object.track_set(type='TRACKTO')
+            context.view_layer.objects.active = camera
+            bpy.ops.object.constraint_add_with_targets(type='TRACK_TO')
             bpy.ops.object.track_clear(type='CLEAR_KEEP_TRANSFORM')
             target.select_set(False)
-            bpy.context.view_layer.objects.active = camera
+
+            camera.location = after_x, after_y, after_z
 
         return{'FINISHED'}
 
@@ -318,7 +330,7 @@ class Set_Camera_Level(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self,context):
-        select_off_not_camera(context)
+        select_only_camera(context)
         camera = context.view_layer.objects.active
 
         z = camera.rotation_euler.z
@@ -334,6 +346,8 @@ class On_Camera_View(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self,context):
+        select_only_camera(context)
+        bpy.ops.view3d.object_as_camera()
         context.area.spaces[0].region_3d.view_perspective = 'CAMERA'
         
         return{'FINISHED'}
@@ -346,6 +360,7 @@ class Off_Camera_View(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self,context):
+        select_only_camera(context)
         context.area.spaces[0].region_3d.view_perspective='PERSP'
 
         return{'FINISHED'}
@@ -357,7 +372,7 @@ class Fly_Mode(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self,context):
-        select_off_not_camera(context)
+        select_only_camera(context)
         bpy.ops.view3d.navigate('INVOKE_DEFAULT')
 
         return{'FINISHED'}
@@ -373,8 +388,7 @@ class Zoom_Camera(bpy.types.Operator):
     def execute(self,context):
         zoom_distance = context.scene.props.zoom_distance
 
-        select_off_not_camera(context)
-        camera = context.view_layer.objects.active
+        select_only_camera(context)
 
         if 'in' == self.in_out:
             bpy.ops.transform.translate(value=(0, 0, -zoom_distance), orient_type='LOCAL')
@@ -393,8 +407,7 @@ class Move_Camera(bpy.types.Operator):
     def execute(self,context):
         move_distance = context.scene.props.move_distance
 
-        select_off_not_camera(context)
-        camera = context.view_layer.objects.active
+        select_only_camera(context)
 
         up_down, left_right, = 0, 0
         
@@ -423,7 +436,7 @@ class Set_Camera_Angle(bpy.types.Operator):
     def execute(self,context):
         change_angle = context.scene.props.change_angle
 
-        select_off_not_camera(context)
+        select_only_camera(context)
         camera = context.view_layer.objects.active
         
         up_down, left_right = 0, 0
@@ -454,7 +467,7 @@ class Zoom_Camera_Manual(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self,context):
-        select_off_not_camera(context)
+        select_only_camera(context)
         bpy.ops.transform.translate('INVOKE_DEFAULT', constraint_axis=(False, False, True), orient_type='LOCAL')
 
         return{'FINISHED'}
@@ -467,7 +480,7 @@ class Translate_Camera_Manual(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self,context):
-        select_off_not_camera(context)
+        select_only_camera(context)
         bpy.ops.transform.translate('INVOKE_DEFAULT')
 
         return{'FINISHED'}
@@ -480,7 +493,7 @@ class Rotate_Camera_Manual(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self,context):
-        select_off_not_camera(context)
+        select_only_camera(context)
         bpy.ops.transform.rotate('INVOKE_DEFAULT')
 
         return{'FINISHED'}
