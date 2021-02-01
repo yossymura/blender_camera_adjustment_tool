@@ -305,20 +305,13 @@ class Set_Camera_To_Target(bpy.types.Operator):
             y = (front_back * -1) * angle_distance * side
             z = up_down * angle_distance
             bpy.ops.transform.translate(value=(x, y, z), orient_type='LOCAL')
-            
-            after_x, after_y, after_z = camera.location
-
-            for obj in context.view_layer.objects:
-                if obj != camera and obj != target:
-                    obj.select_set(False)
 
             target.select_set(True)
             context.view_layer.objects.active = camera
             bpy.ops.object.constraint_add_with_targets(type='TRACK_TO')
-            bpy.ops.object.track_clear(type='CLEAR_KEEP_TRANSFORM')
+            bpy.ops.object.visual_transform_apply()
+            bpy.ops.object.constraints_clear()
             target.select_set(False)
-
-            camera.location = after_x, after_y, after_z
 
         return{'FINISHED'}
 
