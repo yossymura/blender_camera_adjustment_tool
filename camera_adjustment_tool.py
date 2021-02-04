@@ -104,13 +104,18 @@ class CAT_PT_Panel(Panel):
                         row.operator("cameras.fly_mode", text="角度(フライモード)")
 
                     row = box.row(align=False)
-                    row.operator("cameras.position_manual", text="位置")
+                    row.operator("cameras.position_manual", text="位置(上下左右)")
                     
+                    row = box.row(align=False)
+                    row.operator("cameras.zoom_manual", text="位置(前後)")
+
+                    row = box.row(align=False)
+                    cam = bpy.context.object.data
+                    row.prop(cam, "lens", text="焦点距離")
+
                     row = box.row(align=False)
                     row.operator("cameras.rotate_manual", text="回転")
 
-                    row = box.row(align=False)
-                    row.operator("cameras.zoom_manual", text="ズーム")
                 else:
                     row = layout.row(align=False)
                     row.alignment = "CENTER"
@@ -144,7 +149,7 @@ class CAT_PT_Panel(Panel):
                     row = box.row(align=False)
                     row.operator("cameras.set_horizen", text="水平に")
 
-                    layout.label(text="位置")
+                    layout.label(text="位置(上下左右)")
                     box = layout.box()
                     row = box.row(align=False)
                     row.label(text="移動距離(m):")
@@ -158,15 +163,15 @@ class CAT_PT_Panel(Panel):
                     row = box.row(align=False)
                     row.operator("cameras.move", text="↓").direction = 'down'
 
-                    layout.label(text="ズーム")
+                    layout.label(text="位置(前後)")
                     box = layout.box()
                     row = box.row(align=False)
                     row.label(text="移動距離(m):")
                     row.prop(props,"zoom_distance",text="")
 
                     row = box.row(align=False)
-                    row.operator("cameras.zoom", text="ズームイン").in_out = 'in'
-                    row.operator("cameras.zoom", text="ズームアウト").in_out = 'out'
+                    row.operator("cameras.zoom", text="前へ").in_out = 'in'
+                    row.operator("cameras.zoom", text="後ろへ").in_out = 'out'
 
                 else:
                     row = layout.row(align=False)
