@@ -347,7 +347,6 @@ class Toggle_Camera_View(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self,context):
-        select_only_camera(context)
         bpy.ops.view3d.view_camera()
 
         return{'FINISHED'}
@@ -372,6 +371,7 @@ class Fly_Mode(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self,context):
+        select_only_camera(context)
         bpy.ops.view3d.navigate('INVOKE_DEFAULT')
 
         return{'FINISHED'}
