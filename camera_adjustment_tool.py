@@ -87,10 +87,13 @@ class CAT_PT_Panel(Panel):
             box = layout.box()
             row = box.row(align = False)
             row.label(text="カメラビュー")
-            row.operator(
-                "cameras.off_camera_view" if context.area.spaces[0].region_3d.view_perspective == 'CAMERA' else "cameras.on_camera_view",
-                text="ON / OFF",
+            row.operator("cameras.toggle_camera_view", text="ON / OFF",
                 icon="CHECKBOX_HLT" if context.area.spaces[0].region_3d.view_perspective == 'CAMERA' else "CHECKBOX_DEHLT")
+
+            if context.area.spaces[0].region_3d.view_perspective != 'CAMERA':
+                box = layout.box()
+                row = box.row(align = False)
+                row.operator("cameras.to_view", text="カメラを現在の視点に揃える")
 
             row = layout.row(align = True)
             row.alignment = "LEFT"
@@ -337,31 +340,30 @@ class Set_Camera_Level(bpy.types.Operator):
         return{'FINISHED'}
 
 
-class On_Camera_View(bpy.types.Operator):
-    bl_idname = 'cameras.on_camera_view'
-    bl_label = 'Camera View On'
-    bl_description = "Camera View On"
+class Toggle_Camera_View(bpy.types.Operator):
+    bl_idname = 'cameras.toggle_camera_view'
+    bl_label = 'Camera View'
+    bl_description = "Camera View"
     bl_options = {'UNDO'}
 
     def execute(self,context):
         select_only_camera(context)
-        bpy.ops.view3d.object_as_camera()
-        context.area.spaces[0].region_3d.view_perspective = 'CAMERA'
-        
+        bpy.ops.view3d.view_camera()
+
         return{'FINISHED'}
 
 
-class Off_Camera_View(bpy.types.Operator):
-    bl_idname = 'cameras.off_camera_view'
-    bl_label = 'Camera View Off'
-    bl_description = "Camera View Off"
+class Camera_To_View(bpy.types.Operator):
+    bl_idname = 'cameras.to_view'
+    bl_label = 'Camera To View'
+    bl_description = "Camera To View"
     bl_options = {'UNDO'}
 
     def execute(self,context):
-        select_only_camera(context)
-        context.area.spaces[0].region_3d.view_perspective='PERSP'
+        bpy.ops.view3d.camera_to_view()
 
         return{'FINISHED'}
+
 
 class Fly_Mode(bpy.types.Operator):
     bl_idname = 'cameras.fly_mode'
@@ -370,7 +372,6 @@ class Fly_Mode(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     def execute(self,context):
-        select_only_camera(context)
         bpy.ops.view3d.navigate('INVOKE_DEFAULT')
 
         return{'FINISHED'}
@@ -505,8 +506,8 @@ CAT_PT_Panel,
 Set_Camera_To_Target,
 Set_Camera_Level,
 Select_Camera,
-Off_Camera_View,
-On_Camera_View,
+Toggle_Camera_View,
+Camera_To_View,
 Fly_Mode,
 Zoom_Camera,
 Zoom_Camera_Manual,
